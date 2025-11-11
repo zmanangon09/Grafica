@@ -8,17 +8,43 @@ using System.Text;
 using NAudio.Wave;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using NAudio.Wave.SampleProviders;
 
 namespace ReproductorMusica
 {
     public partial class ReproductorMusica : Form
     {
+        private float hexagonPulseFactor = 1f;
+        private float lastIntensity = 0f;
+
+        private List<Particle> particles = new List<Particle>();
+        private Random rand = new Random();
+        private float[] visualizationBuffer = new float[1024]; // Buffer de audio
+        private float intensity = 0f; // Intensidad de la música para animaciones
+                                      // --- Temas dinámicos ---
+        private Color[][] visualizationThemes = new Color[][]
+        {
+    new Color[] { Color.MediumPurple, Color.BlueViolet, Color.DarkOrchid },
+    new Color[] { Color.Crimson, Color.OrangeRed, Color.Gold },
+    new Color[] { Color.LightSeaGreen, Color.Turquoise, Color.CadetBlue }
+        };
+        private int currentThemeIndex = 0;
+        private int themeFrameCounter = 0;
+
+        private class Particle
+        {
+            public float X;
+            public float Y;
+            public float SpeedY;
+            public Color Color;
+        }
+        private MeteringSampleProvider meter;
         private WaveOutEvent outputDevice;
         private AudioFileReader audioFile;
         private bool volumenVisible = false;
         private bool isPaused = false;
         private bool isUserDragging = false;
-
+        private CWaveLine waveLine;
         // Componentes de visualización
         private Bitmap bufferBitmap;
         private Graphics bufferGraphics;
@@ -32,6 +58,62 @@ namespace ReproductorMusica
         {
             InitializeComponent();
             InitializeVisualization();
+            waveLine = new CWaveLine(pbVisualizer.Width, pbVisualizer.Height);
+
+        }
+        private void Meter_StreamVolume(object sender, StreamVolumeEventArgs e)
+        {
+            // Copiar y amplificar amplitud para visualización dinámica
+            for (int i = 0; i < e.MaxSampleValues.Length && i < visualizationBuffer.Length; i++)
+            {
+                // Amplificar para que se vea mejor
+                visualizationBuffer[i] = e.MaxSampleValues[i] * 5f;
+                // Limitar a rango [-1,1] para evitar que se salga del PictureBox
+                if (visualizationBuffer[i] > 1f) visualizationBuffer[i] = 1f;
+                if (visualizationBuffer[i] < -1f) visualizationBuffer[i] = -1f;
+            }
+        }
+        private void GenerateParticles()
+        {
+            int numNewParticles = (int)(intensity * 5);
+            for (int i = 0; i < numNewParticles; i++)
+            {
+                particles.Add(new Particle()
+                {
+                    X = rand.Next((int)pbVisualizer.Width),
+                    Y = pbVisualizer.Height,
+                    SpeedY = 1f + (float)rand.NextDouble() * 3f,
+                    Color = visualizationThemes[currentThemeIndex][rand.Next(visualizationThemes[currentThemeIndex].Length)]
+                });
+            }
+
+            for (int i = particles.Count - 1; i >= 0; i--)
+            {
+                Particle p = particles[i];
+                p.Y -= p.SpeedY;
+                if (p.Y < 0) particles.RemoveAt(i);
+                else
+                    using (Pen pen = new Pen(p.Color, 2))
+                        bufferGraphics.DrawEllipse(pen, p.X, p.Y, 3, 3);
+            }
+        }
+
+        private void UpdateTheme()
+        {
+            themeFrameCounter++;
+            if (themeFrameCounter > 300) // cambia cada 300 frames (~10s)
+            {
+                currentThemeIndex = (currentThemeIndex + 1) % visualizationThemes.Length;
+                themeFrameCounter = 0;
+            }
+        }
+        private void CheckBeat()
+        {
+            if (intensity > 0.6f && intensity > lastIntensity * 1.3f)
+            {
+                hexagonPulseFactor = 1.3f; // pulso temporal
+            }
+            lastIntensity = intensity;
         }
 
         private void InitializeVisualization()
@@ -52,11 +134,74 @@ namespace ReproductorMusica
             visualizationTimer.Tick += VisualizationTimer_Tick;
             visualizationTimer.Start(); // Iniciar la visualización aunque no haya música
         }
+        private void SetupAudio(string path)
+        {
+            audioFile = new AudioFileReader(path);
+            var sampleProvider = audioFile.ToSampleProvider();
+
+            meter = new MeteringSampleProvider(sampleProvider);
+            meter.StreamVolume += (s, e) =>
+            {
+                int len = Math.Min(e.MaxSampleValues.Length, visualizationBuffer.Length);
+                for (int i = 0; i < len; i++)
+                    visualizationBuffer[i] = e.MaxSampleValues[i];
+
+                // Calcular energía de la música
+                float sum = 0f;
+                for (int i = 0; i < len; i++)
+                    sum += Math.Abs(visualizationBuffer[i]);
+
+                intensity = sum / len;          // promedio de amplitud
+                intensity = Math.Min(intensity * 5f, 1f);  // amplificar un poco
+            };
+
+            outputDevice = new WaveOutEvent();
+            outputDevice.Init(meter);
+        }
 
         private void VisualizationTimer_Tick(object sender, EventArgs e)
         {
-            RenderVisualization();
+            // 1) Actualiza tema (cambia color cada X frames)
+            UpdateTheme();
+
+            // 2) Detecta beats (actualiza hexagonPulseFactor si hay pico)
+            CheckBeat();
+
+            // 3) Limpiar canvas
+            bufferGraphics.Clear(Color.Black);
+
+            float centerX = pbVisualizer.Width / 2f;
+            float centerY = pbVisualizer.Height / 2f;
+
+            // 4) Colores del tema actual (usar el tema global ya definido)
+            Color[] themeColors = visualizationThemes[currentThemeIndex];
+
+            // 5) Círculos pulsantes -> pasar themeColors al constructor
+            pulsingCircles = new CPulsingCircles(bufferGraphics, pbVisualizer.Width, pbVisualizer.Height, frameCount, intensity, themeColors);
+            pulsingCircles.Draw();
+
+            // 6) Hexágono: velocidad + pulso
+            float hexSpeed = -2.5f * intensity;
+            hexagon.RotateAndDraw(hexSpeed * hexagonPulseFactor, bufferGraphics, centerX, centerY);
+            // decaimiento suave del pulso
+            hexagonPulseFactor = Math.Max(1f, hexagonPulseFactor - 0.02f);
+
+            // 7) Triángulo: rotación según intensidad
+            float triSpeed = 3f * intensity;
+            triangle.Rotate(triSpeed, bufferGraphics, centerX, centerY);
+
+            // 8) Partículas que suben desde abajo según intensidad
+            GenerateParticles();
+
+            // 9) Pintar buffer al PictureBox
+            pbVisualizer.Image = (Bitmap)bufferBitmap.Clone();
+            frameCount++;
         }
+
+
+
+
+
 
         private void RenderVisualization()
         {
@@ -70,36 +215,39 @@ namespace ReproductorMusica
             float centerY = bufferBitmap.Height / 2f;
 
             // Calcular intensidad basada en el volumen y estado de reproducción
-            float intensity = 1.0f;
+            float localIntensity = 1.0f;
             if (audioFile != null && outputDevice != null && outputDevice.PlaybackState == PlaybackState.Playing)
             {
-                // Usar el volumen como factor de intensidad (más intensidad cuando hay música)
-                intensity = audioFile.Volume * 2.0f;
+                localIntensity = intensity; // usamos la intensidad real del audio
             }
             else
             {
-                // Animación suave cuando no hay música
-                intensity = 0.3f;
+                localIntensity = 0.3f;
             }
 
-            // Dibujar círculos pulsantes con intensidad
-            pulsingCircles = new CPulsingCircles(bufferGraphics, bufferBitmap.Width, bufferBitmap.Height, frameCount, intensity);
+            // --- Colores del tema actual ---
+            Color[] themeColors = visualizationThemes[currentThemeIndex];
+
+            // Dibujar círculos pulsantes (pasando los colores del tema)
+            pulsingCircles = new CPulsingCircles(bufferGraphics, bufferBitmap.Width, bufferBitmap.Height, frameCount, localIntensity, themeColors);
             pulsingCircles.Draw();
 
-            // Rotar y dibujar hexágono (más rápido con música)
-            float hexSpeed = outputDevice != null && outputDevice.PlaybackState == PlaybackState.Playing ? -2.5f * intensity : -0.5f;
+            // Rotar y dibujar hexágono
+            float hexSpeed = outputDevice != null && outputDevice.PlaybackState == PlaybackState.Playing ? -2.5f * localIntensity : -0.5f;
             hexagon.RotateAndDraw(hexSpeed, bufferGraphics, centerX, centerY);
 
-            // Rotar y dibujar triángulo (más rápido con música)
-            float triSpeed = outputDevice != null && outputDevice.PlaybackState == PlaybackState.Playing ? 3f * intensity : 0.5f;
+            // Rotar y dibujar triángulo
+            float triSpeed = outputDevice != null && outputDevice.PlaybackState == PlaybackState.Playing ? 3f * localIntensity : 0.5f;
             triangle.Rotate(triSpeed, bufferGraphics, centerX, centerY);
 
+            // Actualizar contador de frames
             frameCount++;
             if (frameCount > 100) frameCount = 0;
 
-            // Actualizar canvas
+            // Actualizar visualización en el PictureBox
             pbVisualizer.Image = (Bitmap)bufferBitmap.Clone();
         }
+
 
         private void btnVolumen_Click(object sender, EventArgs e)
         {
@@ -121,38 +269,29 @@ namespace ReproductorMusica
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                try
-                {
-                    // Si ya hay una canción cargada, la detenemos
-                    if (outputDevice != null)
-                    {
-                        outputDevice.Stop();
-                        outputDevice.Dispose();
-                        audioFile.Dispose();
-                    }
+                outputDevice?.Stop();
+                outputDevice?.Dispose();
+                audioFile?.Dispose();
 
-                    audioFile = new AudioFileReader(ofd.FileName);
-                    outputDevice = new WaveOutEvent();
-                    outputDevice.Init(audioFile);
+                // Inicializamos audio y meter
+                SetupAudio(ofd.FileName);
 
-                    // Configurar volumen inicial
-                    audioFile.Volume = trackBarVolumen.Value / 100f;
+                audioFile.Volume = trackBarVolumen.Value / 100f;
 
-                    // Configurar barra de progreso
-                    trackBarProgreso.Value = 0;
-                    trackBarProgreso.Maximum = (int)audioFile.TotalTime.TotalSeconds;
-                    btnPlayPause.Text = "▶️";
+                trackBarProgreso.Value = 0;
+                trackBarProgreso.Maximum = (int)audioFile.TotalTime.TotalSeconds;
+                btnPlayPause.Text = "▶️";
 
-                    timer1.Start();
+                if (waveLine == null)
+                    waveLine = new CWaveLine(pbVisualizer.Width, pbVisualizer.Height);
 
-                    MessageBox.Show("Archivo cargado correctamente. Presiona Play para reproducir.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error al cargar el archivo: " + ex.Message);
-                }
+                visualizationTimer.Start();
             }
         }
+
+
+
+
 
         private void btnPlayPause_Click(object sender, EventArgs e)
         {

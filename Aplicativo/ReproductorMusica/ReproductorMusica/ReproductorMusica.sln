@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36518.9 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReproductorMusica", "ReproductorMusica\ReproductorMusica.csproj", "{E14B2FE0-AE7D-4D86-95A1-4DC6F1AB9B2B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReproductorMusica", "ReproductorMusica.csproj", "{E14B2FE0-AE7D-4D86-95A1-4DC6F1AB9B2B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +20,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C710F8EB-78E9-4101-B8DA-111CD5220945}
+		SolutionGuid = {8A315C3B-314E-4DDC-9E75-FC7C1C00C476}
 	EndGlobalSection
 EndGlobal

@@ -76,9 +76,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CHexagon.cs" />
-    <Compile Include="CPulsingCircles.cs" />
-    <Compile Include="CTriangle.cs" />
+    <Compile Include="Controller\CHexagon.cs" />
+    <Compile Include="Controller\CPulsingCircles.cs" />
+    <Compile Include="Controller\CTriangle.cs" />
+    <Compile Include="Controller\CWaveLine.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReproductorMusica.cs">
@@ -132,8 +133,6 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Controlador\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

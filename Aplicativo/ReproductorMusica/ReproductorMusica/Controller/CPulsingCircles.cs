@@ -11,14 +11,15 @@ namespace ReproductorMusica
         private int currentFrame;
         private float intensity;
         private const int maxCircles = 8;
-
-        public CPulsingCircles(Graphics g, float width, float height, int frame, float audioIntensity = 1.0f)
+        private Color[] themeColors;
+        public CPulsingCircles(Graphics g, float width, float height, int frame, float audioIntensity, Color[] colors)
         {
             graphics = g;
             canvasWidth = width;
             canvasHeight = height;
             currentFrame = frame;
             intensity = audioIntensity;
+            themeColors = colors;
         }
 
         public void Draw()
