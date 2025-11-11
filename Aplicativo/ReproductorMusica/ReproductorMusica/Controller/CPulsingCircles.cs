@@ -28,7 +28,7 @@ namespace ReproductorMusica
             float centerY = canvasHeight / 2f;
             float maxRadius = Math.Min(canvasWidth, canvasHeight) * 0.45f;
 
-            // Colores morados con diferentes tonalidades
+           
             Color[] purpleShades = {
                 Color.FromArgb(100, 128, 0, 128),      // Purple
                 Color.FromArgb(120, 138, 43, 226),     // Blue Violet
