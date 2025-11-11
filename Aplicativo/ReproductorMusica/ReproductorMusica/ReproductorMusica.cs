@@ -9,6 +9,8 @@ using NAudio.Wave;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using NAudio.Wave.SampleProviders;
+using TagLib;
+using System.IO;
 
 namespace ReproductorMusica
 {
@@ -16,7 +18,7 @@ namespace ReproductorMusica
     {
         private float hexagonPulseFactor = 1f;
         private float lastIntensity = 0f;
-
+        private Image albumCover;
         private List<Particle> particles = new List<Particle>();
         private Random rand = new Random();
         private float[] visualizationBuffer = new float[1024]; // Buffer de audio
@@ -136,9 +138,16 @@ namespace ReproductorMusica
         }
         private void SetupAudio(string path)
         {
+            // Liberar recursos anteriores si existen
+            outputDevice?.Stop();
+            outputDevice?.Dispose();
+            audioFile?.Dispose();
+
+            // Cargar el archivo de audio
             audioFile = new AudioFileReader(path);
             var sampleProvider = audioFile.ToSampleProvider();
 
+            // Crear el medidor para obtener la intensidad del sonido
             meter = new MeteringSampleProvider(sampleProvider);
             meter.StreamVolume += (s, e) =>
             {
@@ -146,18 +155,46 @@ namespace ReproductorMusica
                 for (int i = 0; i < len; i++)
                     visualizationBuffer[i] = e.MaxSampleValues[i];
 
-                // Calcular energía de la música
+                // Calcular energía promedio del sonido (intensidad)
                 float sum = 0f;
                 for (int i = 0; i < len; i++)
                     sum += Math.Abs(visualizationBuffer[i]);
 
-                intensity = sum / len;          // promedio de amplitud
-                intensity = Math.Min(intensity * 5f, 1f);  // amplificar un poco
+                intensity = sum / len;
+                intensity = Math.Min(intensity * 5f, 1f); // amplifica la respuesta
             };
 
+            // Obtener carátula del archivo de música
+            try
+            {
+                var tfile = TagLib.File.Create(path);
+
+                if (tfile.Tag.Pictures != null && tfile.Tag.Pictures.Length > 0)
+                {
+                    var bin = (byte[])(tfile.Tag.Pictures[0].Data.Data);
+                    using (var ms = new MemoryStream(bin))
+                    {
+                        albumCover = Image.FromStream(ms);
+                        pictureBoxCover.Image = albumCover; // Muestra la carátula en tu PictureBox
+                        pictureBoxCover.SizeMode = PictureBoxSizeMode.StretchImage;
+                    }
+                }
+                else
+                {
+                    // Si no tiene carátula, opcionalmente muestra una imagen por defecto
+                   // pictureBoxCover.Image = Properties.Resources.defaultCover; // opcional
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("No se pudo obtener carátula: " + ex.Message);
+            }
+
+            // Inicializar la salida de audio
             outputDevice = new WaveOutEvent();
             outputDevice.Init(meter);
         }
+
 
         private void VisualizationTimer_Tick(object sender, EventArgs e)
         {
@@ -379,6 +416,11 @@ namespace ReproductorMusica
             bufferGraphics?.Dispose();
             bufferBitmap?.Dispose();
             base.OnFormClosing(e);
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
