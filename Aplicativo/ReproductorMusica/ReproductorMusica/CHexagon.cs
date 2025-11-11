@@ -1,7 +1,7 @@
-ï»¿using System;
+using System;
 using System.Drawing;
 
-namespace Proy_P1
+namespace ReproductorMusica
 {
     internal class CHexagon
     {
@@ -25,14 +25,14 @@ namespace Proy_P1
             if (hexSize <= 0)
                 return;
 
-            // Crear array de 6 puntos para el hexÃ¡gono
+            // Crear array de 6 puntos para el hexágono
             PointF[] hexPoints = new PointF[6];
             double angleInRadians = rotationAngle * Math.PI / 180.0;
 
-            // Calcular los 6 vÃ©rtices del hexÃ¡gono
+            // Calcular los 6 vértices del hexágono
             for (int i = 0; i < 6; i++)
             {
-                // Ãngulo de cada vÃ©rtice (60 grados entre cada uno)
+                // Ángulo de cada vértice (60 grados entre cada uno)
                 double vertexAngle = angleInRadians + i * Math.PI / 3;
 
                 float xPos = (float)(hexSize * Math.Cos(vertexAngle));
@@ -41,11 +41,13 @@ namespace Proy_P1
                 hexPoints[i] = new PointF(centerX + xPos, centerY + yPos);
             }
 
-            // Dibujar hexÃ¡gono exterior con color morado
-            Pen outerPen = new Pen(Color.FromArgb(180, 128, 0, 180), 3);
-            g.DrawPolygon(outerPen, hexPoints);
+            // Dibujar hexágono exterior con color morado
+            using (Pen outerPen = new Pen(Color.FromArgb(180, 128, 0, 180), 3))
+            {
+                g.DrawPolygon(outerPen, hexPoints);
+            }
 
-            // Dibujar hexÃ¡gono interior mÃ¡s pequeÃ±o
+            // Dibujar hexágono interior más pequeño
             PointF[] innerHexPoints = new PointF[6];
             float innerSize = hexSize * 0.6f;
 
@@ -57,14 +59,18 @@ namespace Proy_P1
                 innerHexPoints[i] = new PointF(centerX + xPos, centerY + yPos);
             }
 
-            Pen innerPen = new Pen(Color.FromArgb(200, 186, 85, 211), 2);
-            g.DrawPolygon(innerPen, innerHexPoints);
-
-            // Dibujar lÃ­neas desde el centro hacia los vÃ©rtices
-            Pen linePen = new Pen(Color.FromArgb(150, 147, 112, 219), 1);
-            for (int i = 0; i < 6; i++)
+            using (Pen innerPen = new Pen(Color.FromArgb(200, 186, 85, 211), 2))
             {
-                g.DrawLine(linePen, centerX, centerY, hexPoints[i].X, hexPoints[i].Y);
+                g.DrawPolygon(innerPen, innerHexPoints);
+            }
+
+            // Dibujar líneas desde el centro hacia los vértices
+            using (Pen linePen = new Pen(Color.FromArgb(150, 147, 112, 219), 1))
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    g.DrawLine(linePen, centerX, centerY, hexPoints[i].X, hexPoints[i].Y);
+                }
             }
         }
     }

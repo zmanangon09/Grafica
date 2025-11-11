@@ -1,7 +1,7 @@
-ï»¿using System;
+using System;
 using System.Drawing;
 
-namespace Proy_P1
+namespace ReproductorMusica
 {
     internal class CPulsingCircles
     {
@@ -9,14 +9,16 @@ namespace Proy_P1
         private float canvasWidth;
         private float canvasHeight;
         private int currentFrame;
+        private float intensity;
         private const int maxCircles = 8;
 
-        public CPulsingCircles(Graphics g, float width, float height, int frame)
+        public CPulsingCircles(Graphics g, float width, float height, int frame, float audioIntensity = 1.0f)
         {
             graphics = g;
             canvasWidth = width;
             canvasHeight = height;
             currentFrame = frame;
+            intensity = audioIntensity;
         }
 
         public void Draw()
@@ -37,17 +39,17 @@ namespace Proy_P1
                 Color.FromArgb(130, 199, 21, 133)      // Medium Violet Red
             };
 
-            // Dibujar cÃ­rculos concÃ©ntricos que pulsan
+            // Dibujar círculos concéntricos que pulsan
             for (int i = 0; i < maxCircles; i++)
             {
-                // Calcular el radio con efecto de pulsaciÃ³n
+                // Calcular el radio con efecto de pulsación
                 float phase = (currentFrame + i * 12) % 100;
-                float pulseEffect = (float)Math.Sin(phase * Math.PI / 50) * 0.3f + 0.7f;
+                float pulseEffect = (float)Math.Sin(phase * Math.PI / 50) * 0.3f * intensity + 0.7f;
 
                 float radius = (maxRadius / maxCircles) * (i + 1) * pulseEffect;
 
                 // Calcular transparencia basada en el frame
-                int alpha = (int)(100 + 50 * Math.Sin((currentFrame + i * 15) * Math.PI / 50));
+                int alpha = (int)(100 + 50 * Math.Sin((currentFrame + i * 15) * Math.PI / 50) * intensity);
 
                 Color circleColor = Color.FromArgb(
                     Math.Min(alpha, purpleShades[i].A),
@@ -56,21 +58,20 @@ namespace Proy_P1
                     purpleShades[i].B
                 );
 
-                Pen circlePen = new Pen(circleColor, 2f);
-
-                // Dibujar cÃ­rculo
-                graphics.DrawEllipse(
-                    circlePen,
-                    centerX - radius,
-                    centerY - radius,
-                    radius * 2,
-                    radius * 2
-                );
-
-                circlePen.Dispose();
+                using (Pen circlePen = new Pen(circleColor, 2f))
+                {
+                    // Dibujar círculo
+                    graphics.DrawEllipse(
+                        circlePen,
+                        centerX - radius,
+                        centerY - radius,
+                        radius * 2,
+                        radius * 2
+                    );
+                }
             }
 
-            // Dibujar lÃ­neas decorativas que rotan
+            // Dibujar líneas decorativas que rotan
             DrawRotatingLines(centerX, centerY, maxRadius);
         }
 
@@ -78,24 +79,23 @@ namespace Proy_P1
         {
             int numLines = 6;
             double angleStep = 2 * Math.PI / numLines;
-            double baseAngle = currentFrame * Math.PI / 180 * 3;
+            double baseAngle = currentFrame * Math.PI / 180 * 3 * intensity;
 
-            Pen linePen = new Pen(Color.FromArgb(80, 138, 43, 226), 1);
-
-            for (int i = 0; i < numLines; i++)
+            using (Pen linePen = new Pen(Color.FromArgb(80, 138, 43, 226), 1))
             {
-                double angle = baseAngle + i * angleStep;
+                for (int i = 0; i < numLines; i++)
+                {
+                    double angle = baseAngle + i * angleStep;
 
-                float x1 = centerX + (float)(radius * 0.3 * Math.Cos(angle));
-                float y1 = centerY + (float)(radius * 0.3 * Math.Sin(angle));
+                    float x1 = centerX + (float)(radius * 0.3 * Math.Cos(angle));
+                    float y1 = centerY + (float)(radius * 0.3 * Math.Sin(angle));
 
-                float x2 = centerX + (float)(radius * 0.9 * Math.Cos(angle));
-                float y2 = centerY + (float)(radius * 0.9 * Math.Sin(angle));
+                    float x2 = centerX + (float)(radius * 0.9 * Math.Cos(angle));
+                    float y2 = centerY + (float)(radius * 0.9 * Math.Sin(angle));
 
-                graphics.DrawLine(linePen, x1, y1, x2, y2);
+                    graphics.DrawLine(linePen, x1, y1, x2, y2);
+                }
             }
-
-            linePen.Dispose();
         }
     }
 }
