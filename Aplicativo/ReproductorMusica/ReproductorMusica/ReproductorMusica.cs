@@ -35,7 +35,7 @@ namespace ReproductorMusica
 
         private int themeFrameCounter = 0;
         // Carpeta donde están tus canciones
-        private string carpetaMusica = @"D:\Music\";
+        private string carpetaMusica = @"C:\Users\alejo\Documentos\carpetaMusica";
 
         // Lista que se llenará automáticamente con todos los MP3 de la carpeta
         private List<string> canciones;
@@ -69,12 +69,33 @@ namespace ReproductorMusica
             InitializeComponent();
             InitializeVisualization();
             waveLine = new CWaveLine(pbVisualizer.Width, pbVisualizer.Height);
+            
+            // Validate directory exists or use a default location
+            if (!Directory.Exists(carpetaMusica))
+            {
+                // Use user's default Music folder
+                carpetaMusica = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+                
+                // If still doesn't exist, initialize empty list
+                if (!Directory.Exists(carpetaMusica))
+                {
+                    canciones = new List<string>();
+                    MessageBox.Show("No se encontró una carpeta de música. Use el botón 'Cargar' para seleccionar archivos.", 
+                                  "Carpeta no encontrada", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+            }
+            
             canciones = Directory.GetFiles(carpetaMusica, "*.mp3").ToList();
 
             if (canciones.Count > 0)
             {
-                // Preparar la primera canción
                 SetupAudio(canciones[indiceActual]);
+            }
+            else
+            {
+                MessageBox.Show("No se encontraron archivos MP3 en la carpeta de música.", 
+                               "Sin canciones", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
         private void Meter_StreamVolume(object sender, StreamVolumeEventArgs e)
