@@ -1,16 +1,17 @@
-﻿using System;
+﻿using AxWMPLib;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
-using NAudio.Wave;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using NAudio.Wave.SampleProviders;
 using TagLib;
-using System.IO;
 
 namespace ReproductorMusica
 {
@@ -31,7 +32,15 @@ namespace ReproductorMusica
             new Color[] { Color.LightSeaGreen, Color.Turquoise, Color.CadetBlue }
         };
         private int currentThemeIndex = 0;
+
         private int themeFrameCounter = 0;
+        // Carpeta donde están tus canciones
+        private string carpetaMusica = @"D:\Music\";
+
+        // Lista que se llenará automáticamente con todos los MP3 de la carpeta
+        private List<string> canciones;
+
+        private int indiceActual = 0; // Para saber qué canción se está reproduciendo
 
         private class Particle
         {
@@ -60,7 +69,13 @@ namespace ReproductorMusica
             InitializeComponent();
             InitializeVisualization();
             waveLine = new CWaveLine(pbVisualizer.Width, pbVisualizer.Height);
+            canciones = Directory.GetFiles(carpetaMusica, "*.mp3").ToList();
 
+            if (canciones.Count > 0)
+            {
+                // Preparar la primera canción
+                SetupAudio(canciones[indiceActual]);
+            }
         }
         private void Meter_StreamVolume(object sender, StreamVolumeEventArgs e)
         {
@@ -73,6 +88,24 @@ namespace ReproductorMusica
                 if (visualizationBuffer[i] < -1f) visualizationBuffer[i] = -1f;
             }
         }
+        private void btnSiguiente_Click(object sender, EventArgs e)
+        {
+            if (canciones.Count == 0) return;
+
+            indiceActual++;
+            if (indiceActual >= canciones.Count)
+                indiceActual = 0; // Vuelve al inicio si llega al final
+
+            // Configura el audio de la nueva canción
+            SetupAudio(canciones[indiceActual]);
+            audioFile.Volume = trackBarVolumen.Value / 100f;
+            outputDevice.Play();
+        }
+        private void btnAnterior_Click(object sender, EventArgs e)
+        {
+
+        }
+
         private void GenerateParticles()
         {
             int numNewParticles = (int)(intensity * 5);
@@ -136,6 +169,7 @@ namespace ReproductorMusica
             outputDevice?.Stop();
             outputDevice?.Dispose();
             audioFile?.Dispose();
+            lblCancion.Text = Path.GetFileName(canciones[indiceActual]);
 
             audioFile = new AudioFileReader(path);
             var sampleProvider = audioFile.ToSampleProvider();
@@ -267,8 +301,6 @@ namespace ReproductorMusica
 
 
 
-
-
         private void btnPlayPause_Click(object sender, EventArgs e)
         {
             if (outputDevice == null || audioFile == null)
@@ -279,27 +311,35 @@ namespace ReproductorMusica
 
             if (outputDevice.PlaybackState == PlaybackState.Playing)
             {
+                // Pausar música y animación
                 outputDevice.Pause();
                 isPaused = true;
+                visualizationTimer.Stop(); // Detiene las burbujas
                 btnPlayPause.Text = "▶️";
             }
             else
             {
                 if (isPaused)
                 {
+                    // Reanudar música y animación
                     outputDevice.Play();
                     isPaused = false;
+                    visualizationTimer.Start(); // Reanuda las burbujas
                     btnPlayPause.Text = "⏸️";
                 }
                 else
                 {
-                    // Reinicia desde el inicio si estaba detenido
+                    // Si estaba detenido, reinicia desde el inicio
                     audioFile.Position = 0;
                     outputDevice.Play();
+                    isPaused = false;
+                    visualizationTimer.Start(); // Inicia burbujas desde cero
                     btnPlayPause.Text = "⏸️";
                 }
             }
         }
+
+
 
         private void trackBarProgreso_Scroll(object sender, EventArgs e)
         {
@@ -381,6 +421,5 @@ namespace ReproductorMusica
                 lblTiempo.Text = "00:00 / 00:00";
             }
         }
-
     }
 }

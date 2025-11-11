@@ -39,6 +39,7 @@
             this.trackBarVolumen = new System.Windows.Forms.TrackBar();
             this.button1 = new System.Windows.Forms.Button();
             this.lblTiempo = new System.Windows.Forms.Label();
+            this.lblCancion = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarProgreso)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbVisualizer)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarVolumen)).BeginInit();
@@ -62,6 +63,7 @@
             this.btnNext.TabIndex = 1;
             this.btnNext.Text = "⏭";
             this.btnNext.UseVisualStyleBackColor = true;
+            this.btnNext.Click += new System.EventHandler(this.btnSiguiente_Click);
             // 
             // trackBarProgreso
             // 
@@ -79,6 +81,7 @@
             this.btnPrev.TabIndex = 5;
             this.btnPrev.Text = "⏮";
             this.btnPrev.UseVisualStyleBackColor = true;
+            this.btnPrev.Click += new System.EventHandler(this.btnAnterior_Click);
             // 
             // pbVisualizer
             // 
@@ -89,6 +92,7 @@
             this.pbVisualizer.Size = new System.Drawing.Size(1132, 503);
             this.pbVisualizer.TabIndex = 6;
             this.pbVisualizer.TabStop = false;
+            this.pbVisualizer.Click += new System.EventHandler(this.btnSiguiente_Click);
             // 
             // timer1
             // 
@@ -137,12 +141,22 @@
             this.lblTiempo.Size = new System.Drawing.Size(0, 20);
             this.lblTiempo.TabIndex = 10;
             // 
+            // lblCancion
+            // 
+            this.lblCancion.AutoSize = true;
+            this.lblCancion.BackColor = System.Drawing.Color.White;
+            this.lblCancion.Location = new System.Drawing.Point(144, 562);
+            this.lblCancion.Name = "lblCancion";
+            this.lblCancion.Size = new System.Drawing.Size(0, 20);
+            this.lblCancion.TabIndex = 12;
+            // 
             // ReproductorMusica
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(1132, 596);
+            this.Controls.Add(this.lblCancion);
             this.Controls.Add(this.lblTiempo);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.trackBarVolumen);
@@ -175,5 +189,6 @@
         private System.Windows.Forms.TrackBar trackBarVolumen;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Label lblTiempo;
+        private System.Windows.Forms.Label lblCancion;
     }
 }
