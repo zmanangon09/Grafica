@@ -42,7 +42,7 @@ namespace ReproductorMusica
             }
 
             // Dibujar hexágono exterior con color morado
-            using (Pen outerPen = new Pen(Color.FromArgb(180, 128, 0, 180), 3))
+            using (Pen outerPen = new Pen(Color.FromArgb(255, 255, 215, 0), 12))
             {
                 g.DrawPolygon(outerPen, hexPoints);
             }
@@ -65,7 +65,7 @@ namespace ReproductorMusica
             }
 
             // Dibujar líneas desde el centro hacia los vértices
-            using (Pen linePen = new Pen(Color.FromArgb(150, 147, 112, 219), 1))
+            using (Pen linePen = new Pen(Color.FromArgb(150, 147, 112, 219), 10))
             {
                 for (int i = 0; i < 6; i++)
                 {

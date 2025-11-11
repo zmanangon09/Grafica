@@ -108,7 +108,10 @@ namespace ReproductorMusica
 
         private void GenerateParticles()
         {
-            int numNewParticles = (int)(intensity * 5);
+            float intensidadAmplificada = Math.Min(intensity * 10f, 1f); // limita a 1
+            int maxParticlesPerTick = 20; // máximo de partículas por tick
+            int numNewParticles = (int)(intensidadAmplificada * maxParticlesPerTick);
+
             for (int i = 0; i < numNewParticles; i++)
             {
                 particles.Add(new Particle()
@@ -124,12 +127,15 @@ namespace ReproductorMusica
             {
                 Particle p = particles[i];
                 p.Y -= p.SpeedY;
-                if (p.Y < 0) particles.RemoveAt(i);
+                if (p.Y < 0)
+                    particles.RemoveAt(i);
                 else
                     using (Pen pen = new Pen(p.Color, 2))
                         bufferGraphics.DrawEllipse(pen, p.X, p.Y, 3, 3);
             }
         }
+    
+
 
         private void UpdateTheme()
         {
